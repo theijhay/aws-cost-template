@@ -1,0 +1,81 @@
+{
+  "name": "aws-cost-template",
+  "version": "1.0.0", 
+  "description": "Smart deployment wrapper that adds cost controls to any AWS project without code changes",
+  "main": "index.js",
+  "bin": {
+    "aws-cost-connect": "./scripts/connect.js",
+    "cost-connect": "./scripts/connect.js",
+    "aws-cost-template": "./index.js"
+  },
+  "scripts": {
+    "connect": "node scripts/connect.js",
+    "build": "tsc",
+    "clean": "rm -f lib/*.d.ts lib/*.js lib/*.js.map bin/*.d.ts bin/*.js bin/*.js.map && rm -rf cdk.out",
+    "watch": "tsc -w",
+    "test": "echo \"Tests coming soon\" && exit 0",
+    "cdk": "cdk",
+    "deploy": "cdk deploy --all", 
+    "destroy": "cdk destroy --all",
+    "synth": "cdk synth",
+    "bootstrap": "cdk bootstrap",
+    "diff": "cdk diff",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"**/*.ts\"",
+    "setup": "npm install && npm run build",
+    "cost-estimate": "./scripts/cost-estimator.sh",
+    "cleanup": "echo 'Use AWS Console or CDK destroy for cleanup'",
+    "prepare": "chmod +x scripts/*.sh scripts/connect.js"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "20.12.7",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.4.5"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.140.0",
+    "constructs": "^10.0.0",
+    "aws-sdk": "^2.1649.0"
+  },
+  "keywords": [
+    "aws",
+    "cost-control",
+    "cost-optimization",
+    "budget", 
+    "cloud-governance",
+    "deployment",
+    "wrapper",
+    "template",
+    "cdk",
+    "monitoring",
+    "automation",
+    "finops"
+  ],
+  "preferGlobal": true,
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "scripts/",
+    "lib/",
+    "templates/",
+    "README.md",
+    "DEPLOYMENT.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "AWS Cost Control Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theijhay/aws-cost-template.git"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules
+*.js
+*.d.ts
+!index.js
+!scripts/*.js
+cdk.out/
+.env
+.vscode/
+*.log
+npm-debug.log*
+.npm
