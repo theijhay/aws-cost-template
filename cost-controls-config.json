@@ -1,0 +1,32 @@
+{
+  "projectName": "aws-cost-template",
+  "environment": "dev",
+  "costCenter": "engineering",
+  "owner": "devops-team",
+  "budget": 280,
+  "infrastructure": "aws-cdk",
+  "alertEmail": "admin@company.com",
+  "autoShutdown": true,
+  "resourceLimits": {
+    "maxInstanceTypes": [
+      "t3.micro",
+      "t3.small"
+    ],
+    "maxVolumeSize": 100,
+    "maxMonthlyCost": 100
+  },
+  "tagging": {
+    "required": [
+      "Project",
+      "Environment",
+      "Owner",
+      "CostCenter"
+    ],
+    "automatic": true
+  },
+  "monitoring": {
+    "dashboard": true,
+    "dailyReports": true,
+    "anomalyDetection": true
+  }
+}

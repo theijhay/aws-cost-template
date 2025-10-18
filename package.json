@@ -1,6 +1,6 @@
 {
   "name": "aws-cost-template",
-  "version": "1.0.0", 
+  "version": "1.0.0",
   "description": "Smart deployment wrapper that adds cost controls to any AWS project without code changes",
   "main": "index.js",
   "bin": {
@@ -15,7 +15,7 @@
     "watch": "tsc -w",
     "test": "echo \"Tests coming soon\" && exit 0",
     "cdk": "cdk",
-    "deploy": "cdk deploy --all", 
+    "deploy": "cdk deploy --all",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
     "bootstrap": "cdk bootstrap",
@@ -23,9 +23,12 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"**/*.ts\"",
     "setup": "npm install && npm run build",
-    "cost-estimate": "./scripts/cost-estimator.sh",
+    "cost-estimate": "node cost-controls/cost-estimator.js",
     "cleanup": "echo 'Use AWS Console or CDK destroy for cleanup'",
-    "prepare": "chmod +x scripts/*.sh scripts/connect.js"
+    "prepare": "chmod +x scripts/*.sh scripts/connect.js",
+    "deploy-with-cost-controls": "node deploy-with-cost-controls.js",
+    "cost-report": "echo \"Cost reports available in CloudWatch dashboard\"",
+    "deploy-original": "cdk deploy --all"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
@@ -48,7 +51,7 @@
     "aws",
     "cost-control",
     "cost-optimization",
-    "budget", 
+    "budget",
     "cloud-governance",
     "deployment",
     "wrapper",

@@ -25,12 +25,11 @@ Transform any existing AWS project into a cost-controlled deployment with a sing
 
 ## ⚡ Quick Start
 
-### Option 1: NPX (Recommended)
+### Option 1: GitHub NPX (Recommended)
 ```bash
 # In your existing AWS project directory
-npx @aws-cost-control/template
+npx github:theijhay/aws-cost-template connect
 
-# Follow the interactive setup
 # Then deploy with cost controls
 npm run deploy-with-cost-controls
 ```
@@ -69,7 +68,33 @@ When you connect your project, this template:
 
 **Zero risk. Zero code changes. Maximum savings.**
 
-## 🎬 Try the Demo
+## � **Perfect for New Projects Too!**
+
+**Starting a brand new AWS project?** The template works great for fresh projects:
+
+```bash
+# 1. Create your new project
+mkdir my-new-aws-app && cd my-new-aws-app
+npm init -y
+
+# 2. Add cost controls from day one
+npx github:theijhay/aws-cost-template connect
+
+# 3. Now set up your infrastructure (CDK, Terraform, etc.)
+npm install aws-cdk-lib constructs
+# ... build your infrastructure ...
+
+# 4. Deploy with built-in cost protection
+npm run deploy-with-cost-controls
+```
+
+**Benefits for new projects:**
+- ✅ **Cost protection from day one** - Never accidentally overspend
+- ✅ **Proper tagging setup** - All resources tagged correctly from start
+- ✅ **Budget monitoring** - Know your costs before they surprise you
+- ✅ **Best practices** - Follows AWS cost optimization patterns
+
+## �🎬 Try the Demo
 
 See the template in action:
 
@@ -338,12 +363,31 @@ cost-connect
 
 ## 🔧 Configuration Options
 
+The template automatically detects your configuration and creates `cost-controls-config.json`. You can customize any values after connection.
+
+### 📧 **Alert Email Detection**
+
+The template automatically detects your alert email in this order:
+1. **Git user email:** `git config user.email`
+2. **Package.json author:** `"author": "Name <email@domain.com>"`
+3. **Default fallback:** `admin@company.com`
+
+**To change the alert email:**
+```bash
+# Method 1: Edit the config file directly
+vim cost-controls-config.json
+
+# Method 2: Set git email (detected on next connection)
+git config user.email "your-alerts@company.com"
+```
+
 ### Basic Configuration
 ```json
 {
   "projectName": "my-app",
   "environment": "dev", 
   "budget": 100,
+  "alertEmail": "auto-detected@yourdomain.com",
   "autoShutdown": true
 }
 ```

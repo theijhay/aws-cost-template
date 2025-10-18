@@ -9,3 +9,6 @@ cdk.out/
 *.log
 npm-debug.log*
 .npm
+# Cost Control Template
+cost-control-stack.json
+deployment-report-*.json
