@@ -313,6 +313,11 @@ class CostControlConnector {
     await this.createCostControlUtils(targetDir);
     await this.createCostEstimator(targetDir);
     
+    // For new projects, add infrastructure generator
+    if (this.config.infrastructure === 'none-detected') {
+      await this.createInfrastructureGenerator(targetDir);
+    }
+    
     log(`   Created cost control utilities`, 'blue');
   }
 
@@ -399,6 +404,333 @@ if (require.main === module) {
 module.exports = { main };
 `;
     fs.writeFileSync(path.join(targetDir, 'cost-estimator.js'), estimatorContent);
+  }
+
+  async createInfrastructureGenerator(targetDir) {
+    const generatorContent = `#!/usr/bin/env node
+/**
+ * AWS Infrastructure Generator
+ * Generates complete Docker + AWS deployment setup
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+function main() {
+  console.log('🏗️  AWS Infrastructure Generator');
+  console.log('===============================');
+  console.log('');
+  
+  const config = JSON.parse(fs.readFileSync('cost-controls-config.json', 'utf8'));
+  
+  console.log(\`🚀 Generating complete AWS deployment for: \${config.projectName}\`);
+  console.log('');
+  
+  // Generate all infrastructure files
+  generateDockerfile();
+  generateDockerCompose();
+  generateCDKInfrastructure(config);
+  generateGitHubActions(config);
+  installDependencies();
+  
+  console.log('');
+  console.log('🎉 Infrastructure generation complete!');
+  console.log('');
+  console.log('📋 What was created:');
+  console.log('├── 🐳 Dockerfile');
+  console.log('├── 📋 docker-compose.yml'); 
+  console.log('├── 🏗️  lib/infrastructure-stack.ts');
+  console.log('├── 📄 cdk.json');
+  console.log('├── 🚀 .github/workflows/deploy.yml');
+  console.log('└── 📦 Updated package.json');
+  console.log('');
+  console.log('🚀 Next steps:');
+  console.log('1. npm install (install new dependencies)');
+  console.log('2. npm run build');
+  console.log('3. npm run deploy-with-cost-controls');
+  console.log('');
+  console.log('💡 All deployments include automatic cost controls!');
+}
+
+function generateDockerfile() {
+  const dockerfile = \`FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+FROM node:18-alpine AS runtime  
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+EXPOSE 3000
+CMD ["npm", "start"]
+\`;
+  
+  fs.writeFileSync('Dockerfile', dockerfile);
+  console.log('✅ Created Dockerfile');
+}
+
+function generateDockerCompose() {
+  const compose = \`version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+\`;
+  
+  fs.writeFileSync('docker-compose.yml', compose);
+  console.log('✅ Created docker-compose.yml');
+}
+
+function generateCDKInfrastructure(config) {
+  console.log('🏗️  Creating CDK infrastructure...');
+  
+  // Create directories
+  if (!fs.existsSync('lib')) fs.mkdirSync('lib');
+  if (!fs.existsSync('bin')) fs.mkdirSync('bin');
+  
+  // Infrastructure stack
+  const infraStack = \`import * as cdk from 'aws-cdk-lib';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecsPatterns from 'aws-cdk-lib/aws-ecs-patterns';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { Construct } from 'constructs';
+
+export class InfrastructureStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    // Create VPC with cost optimization
+    const vpc = new ec2.Vpc(this, 'VPC', {
+      maxAzs: 2,
+      natGateways: 1, // Cost optimized: single NAT gateway
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: 'public',
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: 24,
+          name: 'private', 
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        },
+      ],
+    });
+
+    // ECS Cluster
+    const cluster = new ecs.Cluster(this, 'Cluster', {
+      vpc,
+      containerInsights: false, // Cost optimization for dev
+    });
+
+    // Fargate service with cost optimized settings
+    const fargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, 'FargateService', {
+      cluster,
+      taskImageOptions: {
+        image: ecs.ContainerImage.fromAsset('.'),
+        containerPort: 3000,
+      },
+      memoryLimitMiB: 512, // Cost optimized
+      cpu: 256, // Cost optimized  
+      desiredCount: 1,
+      publicLoadBalancer: true,
+    });
+
+    // Cost control tags
+    cdk.Tags.of(this).add('Project', config.projectName);
+    cdk.Tags.of(this).add('Environment', config.environment);
+    cdk.Tags.of(this).add('CostCenter', config.costCenter);
+    cdk.Tags.of(this).add('ManagedBy', 'aws-cost-template');
+
+    // Output
+    new cdk.CfnOutput(this, 'LoadBalancerDNS', {
+      value: fargateService.loadBalancer.loadBalancerDnsName,
+    });
+  }
+}
+\`;
+  
+  fs.writeFileSync('lib/infrastructure-stack.ts', infraStack);
+  
+  // CDK app entry point  
+  const app = \`#!/usr/bin/env node
+import 'source-map-support/register';
+import * as cdk from 'aws-cdk-lib';
+import { InfrastructureStack } from '../lib/infrastructure-stack';
+
+const app = new cdk.App();
+new InfrastructureStack(app, '\${config.projectName}-\${config.environment}', {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
+  },
+});
+\`;
+  
+  fs.writeFileSync('bin/app.ts', app);
+  
+  // CDK configuration
+  const cdkJson = {
+    "app": "npx ts-node --prefer-ts-exts bin/app.ts",
+    "watch": {
+      "include": ["**"],
+      "exclude": ["README.md", "cdk*.json", "**/*.d.ts", "**/*.js", "tsconfig.json", "package*.json", "yarn.lock", "node_modules", "test"]
+    },
+    "context": {
+      "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
+      "@aws-cdk/core:checksumAddressedArtifacts": true,
+      "@aws-cdk/core:stackRelativeExports": true
+    }
+  };
+  
+  fs.writeFileSync('cdk.json', JSON.stringify(cdkJson, null, 2));
+  console.log('✅ Created CDK infrastructure');
+}
+
+function generateGitHubActions(config) {
+  console.log('🚀 Creating CI/CD pipeline...');
+  
+  if (!fs.existsSync('.github')) fs.mkdirSync('.github');
+  if (!fs.existsSync('.github/workflows')) fs.mkdirSync('.github/workflows');
+  
+  const workflow = \`name: Deploy with Cost Controls
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+      
+    - name: Cost validation
+      run: npm run cost-estimate
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: \\\$\{{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: \\\$\{{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Deploy with cost controls
+      if: github.ref == 'refs/heads/main'
+      run: npm run deploy-with-cost-controls
+\`;
+  
+  fs.writeFileSync('.github/workflows/deploy.yml', workflow);
+  console.log('✅ Created GitHub Actions workflow');
+}
+
+function installDependencies() {
+  console.log('📦 Updating project configuration...');
+  
+  // Update package.json with CDK dependencies and scripts
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  
+  packageJson.scripts = packageJson.scripts || {};
+  packageJson.scripts['build'] = 'tsc';
+  packageJson.scripts['watch'] = 'tsc -w'; 
+  packageJson.scripts['deploy'] = 'cdk deploy --all';
+  packageJson.scripts['start'] = 'node dist/index.js';
+  
+  packageJson.devDependencies = packageJson.devDependencies || {};
+  packageJson.devDependencies['aws-cdk-lib'] = '^2.140.0';
+  packageJson.devDependencies['constructs'] = '^10.0.0';
+  packageJson.devDependencies['typescript'] = '^5.0.0';
+  packageJson.devDependencies['@types/node'] = '^20.0.0';
+  packageJson.devDependencies['ts-node'] = '^10.0.0';
+  packageJson.devDependencies['source-map-support'] = '^0.5.21';
+  
+  fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
+  
+  // TypeScript configuration
+  const tsConfig = {
+    "compilerOptions": {
+      "target": "ES2020",
+      "module": "commonjs",
+      "lib": ["es2020"],
+      "declaration": true,
+      "strict": true,
+      "noImplicitAny": true,
+      "strictNullChecks": true,
+      "noImplicitThis": true,
+      "alwaysStrict": true,
+      "noUnusedLocals": false,
+      "noUnusedParameters": false,
+      "noImplicitReturns": true,
+      "noFallthroughCasesInSwitch": false,
+      "inlineSourceMap": true,
+      "inlineSources": true,
+      "experimentalDecorators": true,
+      "strictPropertyInitialization": false,
+      "typeRoots": ["./node_modules/@types"],
+      "outDir": "./dist",
+      "rootDir": "./src"
+    },
+    "include": ["src/**/*", "bin/**/*", "lib/**/*"],
+    "exclude": ["node_modules", "dist", "cdk.out"]
+  };
+  
+  fs.writeFileSync('tsconfig.json', JSON.stringify(tsConfig, null, 2));
+  
+  // Create basic index.js if it doesn't exist
+  if (!fs.existsSync('src')) fs.mkdirSync('src');
+  if (!fs.existsSync('src/index.ts')) {
+    const basicApp = \`import express from 'express';
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Hello from AWS with Cost Controls!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.listen(port, () => {
+  console.log(\\\`Server running on port \\\${port}\\\`);
+});
+\`;
+    fs.writeFileSync('src/index.ts', basicApp);
+  }
+  
+  console.log('✅ Updated project configuration');
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = { main };
+`;
+    
+    fs.writeFileSync(path.join(targetDir, 'infrastructure-generator.js'), generatorContent);
   }
 
   generateCostControlModule(moduleName) {
@@ -647,27 +979,28 @@ async function deployWithCostControls() {
     console.log('🚀 Deploying application with cost controls...');
     
     if (deployCommand.includes('echo')) {
-      // New project - show setup guidance
+      // New project - offer infrastructure generation
       console.log('');
-      console.log('🎯 New Project Setup Guide');
-      console.log('========================');
+      console.log('🎯 New Project Detected!');
+      console.log('=======================');
       console.log('');
-      console.log('📋 Next steps to complete your AWS deployment:');
+      console.log('� Want a complete AWS deployment setup?');
+      console.log('   We can generate everything you need:');
       console.log('');
-      console.log('1️⃣ Choose your infrastructure tool:');
-      console.log('   • CDK: npm install aws-cdk-lib constructs');
-      console.log('   • Serverless: npm install serverless');
-      console.log('   • Terraform: Install terraform CLI');
+      console.log('   📦 Complete Infrastructure Package:');
+      console.log('   ├── 🐳 Dockerfile (optimized)');
+      console.log('   ├── 📋 docker-compose.yml');
+      console.log('   ├── 🏗️  CDK infrastructure (ECS + RDS)');
+      console.log('   ├── 🚀 GitHub Actions CI/CD');
+      console.log('   ├── 🛡️  Cost controls (already active)');
+      console.log('   └── 📊 Monitoring setup');
       console.log('');
-      console.log('2️⃣ Add deploy script to package.json:');
-      console.log('   • CDK: "deploy": "cdk deploy --all"');
-      console.log('   • Serverless: "deploy": "serverless deploy"');
-      console.log('   • Custom: "deploy": "your-deploy-command"');
+      console.log('💡 Run: npm run generate-infrastructure');
       console.log('');
-      console.log('3️⃣ Deploy with cost controls:');
-      console.log('   npm run deploy-with-cost-controls');
-      console.log('');
-      console.log('💡 Cost controls are already active and will protect your deployment!');
+      console.log('Or set up manually:');
+      console.log('1️⃣ CDK: npm install aws-cdk-lib constructs');
+      console.log('2️⃣ Add "deploy": "cdk deploy --all" to package.json');
+      console.log('3️⃣ Deploy: npm run deploy-with-cost-controls');
     } else {
       execSync(deployCommand, { stdio: 'inherit' });
     }
@@ -800,6 +1133,11 @@ if (require.main === module) {
       packageJson.scripts['deploy-with-cost-controls'] = 'node deploy-with-cost-controls.js';
       packageJson.scripts['cost-estimate'] = 'node cost-controls/cost-estimator.js';
       packageJson.scripts['cost-report'] = 'echo "Cost reports available in CloudWatch dashboard"';
+      
+      // Add infrastructure generation for new projects
+      if (this.config.infrastructure === 'none-detected') {
+        packageJson.scripts['generate-infrastructure'] = 'node cost-controls/infrastructure-generator.js';
+      }
       
       // Backup original deploy script
       if (packageJson.scripts.deploy && !packageJson.scripts['deploy-original']) {

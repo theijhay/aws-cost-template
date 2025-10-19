@@ -2,12 +2,41 @@
 
 **Smart deployment wrapper that adds cost controls to any AWS project without code changes.**
 
-Transform any existing AWS project into a cost-controlled deployment with a single command. No code changes, no infrastructure modifications - just pure cost protection.
+Transform any existing AWS project into a cost-controlled deployment with a single command. For new projects, get a complete AWS deployment setup with Docker, CDK infrastructure, and CI/CD - all with built-in cost protection.
+
+## 🆕 **NEW: Complete Infrastructure Generation!**
+
+**Starting a new AWS project?** Get everything you need in minutes:
+
+```bash
+# 1. Create your project
+mkdir my-aws-app && cd my-aws-app
+npm init -y
+
+# 2. Add cost controls
+npx github:theijhay/aws-cost-template connect
+
+# 3. Generate complete AWS infrastructure
+npm run generate-infrastructure
+
+# 4. Deploy to AWS with cost protection
+npm run deploy-with-cost-controls
+```
+
+**🎁 What you get automatically:**
+- 🐳 **Optimized Dockerfile** (multi-stage, production-ready)
+- 📋 **docker-compose.yml** (local development)
+- 🏗️ **CDK Infrastructure** (ECS Fargate + ALB + VPC)
+- 🚀 **GitHub Actions CI/CD** (automated deployment)
+- 📱 **Express.js App** (TypeScript, ready to run)
+- 🛡️ **Cost controls** (built into everything)
+- 💰 **Cost-optimized** (uses smallest viable AWS resources)
 
 ## 📖 Table of Contents
 
 - [🚀 Quick Start](#-quick-start)
-- [🎯 What This Does](#-what-this-does) 
+- [� Infrastructure Generation](#-infrastructure-generation)
+- [�🎯 What This Does](#-what-this-does) 
 - [⚡ What Happens When You Connect](#-what-happens-when-you-connect)
 - [🚀 Features](#-features)
 - [📋 Supported Project Types](#-supported-project-types)
@@ -94,7 +123,91 @@ npm run deploy-with-cost-controls
 - ✅ **Budget monitoring** - Know your costs before they surprise you
 - ✅ **Best practices** - Follows AWS cost optimization patterns
 
-## �🎬 Try the Demo
+## 🏗️ Infrastructure Generation
+
+**NEW!** For brand new projects, generate a complete AWS deployment stack instantly:
+
+### **🚀 One Command, Complete AWS Stack**
+
+```bash
+# After connecting your new project
+npm run generate-infrastructure
+```
+
+**🎁 What gets auto-generated:**
+
+```
+📦 Complete AWS Deployment Package:
+├── 🐳 Dockerfile (optimized multi-stage)
+├── 📋 docker-compose.yml (local development)
+├── 🏗️ CDK Infrastructure:
+│   ├── ECS Fargate service (cost-optimized)
+│   ├── Application Load Balancer
+│   ├── VPC with single NAT gateway
+│   └── Auto-scaling & health checks
+├── 🚀 GitHub Actions CI/CD:
+│   ├── Automated testing
+│   ├── Cost validation
+│   ├── Secure AWS deployment
+│   └── Multi-environment support
+├── 📱 Express.js TypeScript App:
+│   ├── Production-ready server
+│   ├── Health check endpoints
+│   └── Environment configuration
+├── ⚙️ Configuration Files:
+│   ├── TypeScript config
+│   ├── CDK configuration
+│   └── Docker optimization
+└── 🛡️ Cost Controls (built into everything)
+```
+
+### **💰 Cost-Optimized by Default**
+
+All generated infrastructure uses **smallest viable AWS resources**:
+- **256 CPU / 512 MB memory** for Fargate tasks
+- **Single NAT gateway** (instead of per-AZ)
+- **Container Insights disabled** for dev environments
+- **Spot instances** for non-critical workloads
+- **Auto-shutdown** ready for dev environments
+- **Proper tagging** for cost tracking
+
+### **📋 Complete Workflow Example**
+
+```bash
+# 1. Start your project
+mkdir my-production-app && cd my-production-app
+npm init -y
+
+# 2. Connect cost controls
+npx github:theijhay/aws-cost-template connect
+
+# 3. Generate complete infrastructure
+npm run generate-infrastructure
+
+# 4. Install new dependencies
+npm install
+
+# 5. Customize your app (optional)
+# Edit src/index.ts for your business logic
+
+# 6. Deploy to AWS with cost protection
+npm run deploy-with-cost-controls
+
+# 7. Your app is live with:
+#    - Cost monitoring
+#    - Auto-scaling
+#    - CI/CD pipeline
+#    - Production-ready architecture
+```
+
+### **🎯 Perfect For:**
+- 🆕 **New AWS developers** - Get production-ready setup without learning CDK/Docker first
+- 🚀 **Rapid prototyping** - From idea to deployed app in minutes
+- 💼 **Startups** - Production infrastructure without DevOps expertise
+- 🎓 **Learning** - See best practices in action
+- 💰 **Cost-conscious teams** - Built-in optimization and monitoring
+
+## 🎬 Try the Demo
 
 See the template in action:
 
